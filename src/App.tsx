@@ -10,15 +10,23 @@ import { InventoryModal } from "./components/InventoryModal";
 import { NavItem } from "./components/NavItem";
 import { TransactionModal } from "./components/TransactionModal";
 import { useVendorApp } from "./hooks/useVendorApp";
+import { findOrCreateVendorByPhone } from "./lib/supabaseRest";
+import { useLanguage } from "./lib/i18n";
 import { AlertsPage } from "./pages/AlertsPage";
 import { HomePage } from "./pages/HomePage";
 import { KhataPage } from "./pages/KhataPage";
 import { LoansPage } from "./pages/LoansPage";
+import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import type { InventoryRow, Page, TransactionInput, TransactionIntent } from "./types";
 
 const App = () => {
-  const [activePage, setActivePage] = useState<Page>("khata");
+  const { t } = useLanguage();
+  const [vendorId, setVendorId] = useState<string | null>(() =>
+    window.localStorage.getItem("vendor-id"),
+  );
+  const [loginError, setLoginError] = useState("");
+  const [activePage, setActivePage] = useState<Page>("home");
   const [transactionIntent, setTransactionIntent] =
     useState<TransactionIntent | null>(null);
   const [editingInventoryItem, setEditingInventoryItem] =
@@ -40,21 +48,43 @@ const App = () => {
     saveTransaction,
     updateInventory,
     submitProfileAction,
-  } = useVendorApp();
+  } = useVendorApp(vendorId);
 
-  const handleSaveTransaction = (
+  const handleSaveTransaction = async (
     transaction: TransactionInput,
     intent: TransactionIntent,
   ) => {
+    await saveTransaction(transaction, intent);
     setTransactionIntent(null);
-    void saveTransaction(transaction, intent);
   };
+
+  if (!vendorId) {
+    return (
+      <LoginPage
+        error={loginError}
+        onLogin={async (number) => {
+          setLoginError("");
+          try {
+            const vendor = await findOrCreateVendorByPhone(number);
+            window.localStorage.setItem("vendor-id", vendor.id);
+            setVendorId(vendor.id);
+          } catch (loginFailure) {
+            setLoginError(
+              loginFailure instanceof Error
+                ? loginFailure.message
+                : "Could not sign in. Please try again.",
+            );
+          }
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 px-3 py-4 text-slate-950">
         <div className="rounded-2xl bg-white px-6 py-4 text-sm font-semibold shadow-lg">
-          Loading vendor data...
+          {t("Loading vendor data...")}
         </div>
       </main>
     );
@@ -101,6 +131,11 @@ const App = () => {
         )}
         {activePage === "profile" && (
           <ProfilePage
+            onLogout={() => {
+              window.localStorage.removeItem("vendor-id");
+              setVendorId(null);
+              setActivePage("home");
+            }}
             onSubmitAction={submitProfileAction}
             profile={profile}
           />
@@ -110,37 +145,38 @@ const App = () => {
           <NavItem
             active={activePage === "home"}
             icon={<Home size={20} />}
-            label="Home"
+            label={t("Home")}
             onClick={() => setActivePage("home")}
           />
           <NavItem
             active={activePage === "khata"}
             icon={<BookOpen size={20} />}
-            label="Khata"
+            label={t("Khata")}
             onClick={() => setActivePage("khata")}
           />
           <NavItem
             active={activePage === "alerts"}
             icon={<Bell size={20} />}
-            label="Alerts"
+            label={t("Alerts")}
             onClick={() => setActivePage("alerts")}
           />
           <NavItem
             active={activePage === "loans"}
             icon={<CreditCard size={20} />}
-            label="Loans"
+            label={t("Loans")}
             onClick={() => setActivePage("loans")}
           />
           <NavItem
             active={activePage === "profile"}
             icon={<User size={20} />}
-            label="Profile"
+            label={t("Profile")}
             onClick={() => setActivePage("profile")}
           />
         </nav>
 
         {transactionIntent && (
           <TransactionModal
+            inventory={inventory}
             mode={transactionIntent}
             onClose={() => setTransactionIntent(null)}
             onSave={handleSaveTransaction}

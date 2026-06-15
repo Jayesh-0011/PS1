@@ -4,7 +4,7 @@ create table if not exists public.vendor_profiles (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   business_type text not null,
-  phone text not null,
+  phone text not null unique,
   upi_id text not null,
   business_health_index integer not null check (
     business_health_index between 0 and 100
@@ -111,6 +111,11 @@ on public.vendor_profiles for select
 to anon
 using (true);
 
+create policy "Anon create vendor by phone"
+on public.vendor_profiles for insert
+to anon
+with check (true);
+
 create policy "Anon read customers demo data"
 on public.customers for select
 to anon
@@ -185,9 +190,9 @@ insert into public.vendor_profiles (
   '11111111-1111-1111-1111-111111111111',
   'Ramesh Kumar',
   'Street Food Vendor',
-  '+91 98765 43210',
+  '9876543210',
   'ramesh@oksbi',
-  78,
+  0,
   'completed',
   'completed',
   'completed',
@@ -209,7 +214,7 @@ insert into public.customers (
     'Rajesh Kumar',
     'rajesh@oksbi',
     'UPI: rajesh@oksbi',
-    3470
+    0
   ),
   (
     '11111111-1111-1111-1111-111111111111',
@@ -223,46 +228,9 @@ insert into public.customers (
     'Amit Tea Stall',
     'amitstall@paytm',
     'UPI: amitstall@paytm',
-    500
+    0
   )
 on conflict (vendor_id, name) do nothing;
-
-insert into public.khata_entries (
-  vendor_id,
-  customer_name,
-  customer_upi,
-  note,
-  amount,
-  entry_type,
-  entry_date
-) values
-  (
-    '11111111-1111-1111-1111-111111111111',
-    'Rajesh Kumar',
-    'rajesh@oksbi',
-    'Tomato, onion, potato',
-    780,
-    'money_out',
-    current_date
-  ),
-  (
-    '11111111-1111-1111-1111-111111111111',
-    'Meena Stores',
-    'meenastore@upi',
-    'Cash received',
-    1800,
-    'money_in',
-    current_date
-  ),
-  (
-    '11111111-1111-1111-1111-111111111111',
-    'Amit Tea Stall',
-    'amitstall@paytm',
-    'Milk packets',
-    420,
-    'money_out',
-    current_date - interval '1 day'
-  );
 
 insert into public.inventory_items (
   vendor_id,
@@ -271,9 +239,9 @@ insert into public.inventory_items (
   unit,
   restock_level
 ) values
-  ('11111111-1111-1111-1111-111111111111', 'Tomatoes', 35, 'Kg', 20),
-  ('11111111-1111-1111-1111-111111111111', 'Onions', 12, 'Kg', 25),
-  ('11111111-1111-1111-1111-111111111111', 'Potatoes', 50, 'Kg', 20);
+  ('11111111-1111-1111-1111-111111111111', 'Tomatoes', 0, 'Kg', 20),
+  ('11111111-1111-1111-1111-111111111111', 'Onions', 0, 'Kg', 25),
+  ('11111111-1111-1111-1111-111111111111', 'Potatoes', 0, 'Kg', 20);
 
 insert into public.loan_offers (
   name,

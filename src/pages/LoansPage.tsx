@@ -2,6 +2,7 @@ import { Bell, CreditCard } from "lucide-react";
 import { LoanCard } from "../components/LoanCard";
 import { SectionTitle } from "../components/SectionTitle";
 import type { LoanOfferItem } from "../types";
+import { useLanguage } from "../lib/i18n";
 
 interface LoansPageProps {
   businessHealthIndex: number;
@@ -11,7 +12,9 @@ interface LoansPageProps {
 export const LoansPage = ({
   businessHealthIndex,
   loanOffers,
-}: LoansPageProps) => (
+}: LoansPageProps) => {
+  const { t } = useLanguage();
+  return (
   <>
     <header className="bg-emerald-700 px-5 pb-5 pt-5 text-white">
       <div className="flex items-center justify-between">
@@ -20,9 +23,9 @@ export const LoansPage = ({
         </button>
         <div className="text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-emerald-100">
-            Loan Offers
+            {t("Loan Offers")}
           </p>
-          <h1 className="text-lg font-bold">Business Loans</h1>
+          <h1 className="text-lg font-bold">{t("Business Loans")}</h1>
         </div>
         <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15">
           <Bell size={20} />
@@ -32,11 +35,11 @@ export const LoansPage = ({
       <section className="mt-5 rounded-2xl bg-white p-4 text-slate-950">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-slate-500">Business Health Index</p>
+            <p className="text-sm text-slate-500">{t("Business Health Index")}</p>
             <p className="mt-1 text-3xl font-black">{businessHealthIndex} / 100</p>
           </div>
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-            Good
+            {t("Good")}
           </span>
         </div>
         <div className="mt-3 h-3 w-full rounded-full bg-gray-200">
@@ -49,7 +52,7 @@ export const LoansPage = ({
     </header>
 
     <div className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
-      <SectionTitle action="Raw data" title="Available Loans" />
+      <SectionTitle action={t("Raw data")} title={t("Available Loans")} />
       <div className="space-y-3">
         {loanOffers.map((loan) => (
           <LoanCard
@@ -61,4 +64,5 @@ export const LoansPage = ({
       </div>
     </div>
   </>
-);
+  );
+};

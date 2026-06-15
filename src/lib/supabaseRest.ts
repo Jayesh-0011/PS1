@@ -128,10 +128,13 @@ const parseError = async (response: Response, action: string) => {
 };
 
 export class MissingTableError extends Error {
-  constructor(public readonly table: string) {
+  readonly table: string;
+
+  constructor(table: string) {
     super(
       `Table "${table}" is missing in Supabase. Run supabase/migrations/20250603_missing_tables.sql in the SQL Editor.`,
     );
+    this.table = table;
     this.name = "MissingTableError";
   }
 }
@@ -213,6 +216,45 @@ export const fetchVendorProfile = (vendorId: string) =>
     "vendor_profiles",
     `?id=eq.${vendorId}&select=*`,
   ).then((rows) => rows[0] ?? null);
+
+export const fetchVendorProfileByPhone = (phone: string) =>
+  fetchRows<VendorProfile>(
+    "vendor_profiles",
+    `?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`,
+  ).then((rows) => rows[0] ?? null);
+
+export const findOrCreateVendorByPhone = async (phone: string) => {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase is not configured. Add the project URL and anon key first.");
+  }
+
+  const existing = await fetchVendorProfileByPhone(phone);
+  if (existing) {
+    return existing;
+  }
+
+  try {
+    const [created] = await insertRow<VendorProfile>("vendor_profiles", {
+      business_health_index: 0,
+      business_type: "Vendor",
+      name: `Vendor ${phone.slice(-4)}`,
+      phone,
+      upi_id: `vendor${phone}@pending`,
+    });
+
+    if (!created) {
+      throw new Error("Could not create the vendor profile.");
+    }
+
+    return created;
+  } catch (error) {
+    const vendor = await fetchVendorProfileByPhone(phone);
+    if (vendor) {
+      return vendor;
+    }
+    throw error;
+  }
+};
 
 export const fetchCustomers = (vendorId: string) =>
   fetchRows<CustomerRecord>(

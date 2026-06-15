@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { XCircle } from "lucide-react";
 import type { InventoryRow } from "../types";
+import { useLanguage } from "../lib/i18n";
 
 interface InventoryModalProps {
   item: InventoryRow;
@@ -9,6 +10,7 @@ interface InventoryModalProps {
 }
 
 export const InventoryModal = ({ item, onClose, onSave }: InventoryModalProps) => {
+  const { t } = useLanguage();
   const [quantity, setQuantity] = useState(String(item.quantity));
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -30,7 +32,7 @@ export const InventoryModal = ({ item, onClose, onSave }: InventoryModalProps) =
         onSubmit={handleSubmit}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black">Update {item.label}</h2>
+          <h2 className="text-lg font-black">{t("Update Stock")}: {item.label}</h2>
           <button
             className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600"
             onClick={onClose}
@@ -42,7 +44,7 @@ export const InventoryModal = ({ item, onClose, onSave }: InventoryModalProps) =
 
         <label className="mt-4 block">
           <span className="text-sm font-bold text-slate-600">
-            Quantity ({item.unit})
+            {t("Quantity")} ({item.unit})
           </span>
           <input
             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
@@ -59,7 +61,7 @@ export const InventoryModal = ({ item, onClose, onSave }: InventoryModalProps) =
           className="mt-4 w-full rounded-xl bg-emerald-600 p-4 font-bold text-white"
           type="submit"
         >
-          Save Stock
+          {t("Save Stock")}
         </button>
       </form>
     </div>

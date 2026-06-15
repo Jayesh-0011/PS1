@@ -1,42 +1,66 @@
 import { useState } from "react";
 import { XCircle } from "lucide-react";
-import type { TransactionInput, TransactionIntent } from "../types";
+import type {
+  InventoryRow,
+  TransactionInput,
+  TransactionIntent,
+} from "../types";
+import { useLanguage } from "../lib/i18n";
 
 interface TransactionModalProps {
+  inventory: InventoryRow[];
   mode: TransactionIntent;
   onClose: () => void;
-  onSave: (transaction: TransactionInput, mode: TransactionIntent) => void;
+  onSave: (
+    transaction: TransactionInput,
+    mode: TransactionIntent,
+  ) => Promise<void>;
 }
 
 export const TransactionModal = ({
+  inventory,
   mode,
   onClose,
   onSave,
 }: TransactionModalProps) => {
+  const { t } = useLanguage();
   const isKhata = mode === "khata";
   const isSale = mode === "sale";
   const title = isSale
-    ? "Add Sale"
+    ? t("Add Sale")
     : mode === "expense"
-      ? "Update Expense"
-      : "Add Khata Entry";
+      ? t("Update Expense")
+      : t("Add Khata Entry");
 
   const [customer, setCustomer] = useState(
     isKhata ? "Rajesh Kumar" : "Walk-in Customer",
   );
+  const [selectedItemId, setSelectedItemId] = useState(
+    isSale ? (inventory[0]?.id ?? "other") : "",
+  );
+  const [otherItem, setOtherItem] = useState("");
   const [note, setNote] = useState(
-    isSale ? "New sale" : mode === "expense" ? "Business expense" : "",
+    mode === "expense" ? "Business expense" : "",
   );
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"in" | "out">(
     isKhata ? "out" : isSale ? "in" : "out",
   );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const numericAmount = Number(amount);
-    if (!note.trim() || numericAmount <= 0) {
+    const selectedItem = inventory.find((item) => item.id === selectedItemId);
+    const saleItem =
+      selectedItemId === "other" ? otherItem.trim() : selectedItem?.label;
+    const transactionNote = isSale
+      ? [saleItem, note.trim()].filter(Boolean).join(" - ")
+      : note.trim();
+
+    if (!transactionNote || numericAmount <= 0) {
       return;
     }
 
@@ -44,15 +68,25 @@ export const TransactionModal = ({
       return;
     }
 
-    onSave(
-      {
-        amount: numericAmount,
-        customer: isKhata ? customer.trim() : "Business",
-        note: note.trim(),
-        type: isKhata ? type : isSale ? "in" : "out",
-      },
-      mode,
-    );
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onSave(
+        {
+          amount: numericAmount,
+          customer: isKhata ? customer.trim() : "Business",
+          note: transactionNote,
+          type: isKhata ? type : isSale ? "in" : "out",
+        },
+        mode,
+      );
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : t("Could not save the entry."),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -75,7 +109,7 @@ export const TransactionModal = ({
         <div className="mt-4 space-y-3">
           {isKhata && (
             <label className="block">
-              <span className="text-sm font-bold text-slate-600">Customer</span>
+              <span className="text-sm font-bold text-slate-600">{t("Customer")}</span>
               <input
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
                 onChange={(event) => setCustomer(event.target.value)}
@@ -84,18 +118,52 @@ export const TransactionModal = ({
             </label>
           )}
 
+          {isSale && (
+            <label className="block">
+              <span className="text-sm font-bold text-slate-600">{t("Item sold")}</span>
+              <select
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
+                onChange={(event) => setSelectedItemId(event.target.value)}
+                required
+                value={selectedItemId}
+              >
+                {inventory.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+                <option value="other">{t("Other item")}</option>
+              </select>
+            </label>
+          )}
+
+          {isSale && selectedItemId === "other" && (
+            <label className="block">
+              <span className="text-sm font-bold text-slate-600">{t("Item name")}</span>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
+                onChange={(event) => setOtherItem(event.target.value)}
+                placeholder={t("Enter item sold")}
+                required
+                value={otherItem}
+              />
+            </label>
+          )}
+
           <label className="block">
-            <span className="text-sm font-bold text-slate-600">Note</span>
+            <span className="text-sm font-bold text-slate-600">
+              {isSale ? t("Note (optional)") : t("Note")}
+            </span>
             <input
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
               onChange={(event) => setNote(event.target.value)}
-              placeholder={isSale ? "What was sold?" : "Description"}
+              placeholder={isSale ? t("Sale details") : t("Description")}
               value={note}
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-bold text-slate-600">Amount (Rs)</span>
+            <span className="text-sm font-bold text-slate-600">{t("Amount (Rs)")}</span>
             <input
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
               min="1"
@@ -110,7 +178,7 @@ export const TransactionModal = ({
 
           {isKhata && (
             <label className="block">
-              <span className="text-sm font-bold text-slate-600">Type</span>
+              <span className="text-sm font-bold text-slate-600">{t("Type")}</span>
               <select
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-emerald-500"
                 onChange={(event) =>
@@ -118,18 +186,25 @@ export const TransactionModal = ({
                 }
                 value={type}
               >
-                <option value="in">Money In</option>
-                <option value="out">Money Out</option>
+                <option value="in">{t("Money In")}</option>
+                <option value="out">{t("Money Out")}</option>
               </select>
             </label>
           )}
         </div>
 
+        {saveError && (
+          <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+            {saveError}
+          </p>
+        )}
+
         <button
-          className="mt-4 w-full rounded-xl bg-emerald-600 p-4 font-bold text-white"
+          className="mt-4 w-full rounded-xl bg-emerald-600 p-4 font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          disabled={saving}
           type="submit"
         >
-          Save
+          {saving ? t("Saving...") : t("Save")}
         </button>
       </form>
     </div>

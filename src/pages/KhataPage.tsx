@@ -17,6 +17,7 @@ import { SectionTitle } from "../components/SectionTitle";
 import { khataFilters } from "../data/mockData";
 import { computeKhataSummaryFromEntries } from "../lib/khata";
 import type { KhataFilter, LedgerEntry } from "../types";
+import { useLanguage } from "../lib/i18n";
 
 interface KhataPageProps {
   entries: LedgerEntry[];
@@ -31,14 +32,14 @@ export const KhataPage = ({
   onAddSale,
   onAddExpense,
 }: KhataPageProps) => {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<KhataFilter>("today");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const summary = computeKhataSummaryFromEntries(entries, activeFilter);
   const activeFilterLabel =
-    khataFilters.find((filter) => filter.value === activeFilter)?.label ??
-    "Today";
+    t(khataFilters.find((filter) => filter.value === activeFilter)?.label ?? "Today");
 
   const filteredRecentEntries = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -68,9 +69,9 @@ export const KhataPage = ({
           </button>
           <div className="text-center">
             <p className="text-xs font-medium uppercase tracking-wide text-emerald-100">
-              Digital Khata
+              {t("Digital Khata")}
             </p>
-            <h1 className="text-lg font-bold">Sales &amp; Expenses</h1>
+            <h1 className="text-lg font-bold">{t("Sales & Expenses")}</h1>
           </div>
           <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15">
             <Bell size={20} />
@@ -80,27 +81,27 @@ export const KhataPage = ({
         <section className="mt-5 rounded-2xl bg-white p-4 text-slate-950">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-slate-500">Total receivable</p>
+              <p className="text-sm text-slate-500">{t("Total receivable")}</p>
               <h2 className="mt-1 flex items-center text-3xl font-black">
                 <IndianRupee size={25} />
                 {totalReceivable.toLocaleString("en-IN")}
               </h2>
             </div>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
-              {filteredRecentEntries.length} entries
+              {filteredRecentEntries.length} {t("entries")}
             </span>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <MiniStat
               icon={<ArrowDownLeft size={17} />}
-              label="Money in"
+              label={t("Money in")}
               value={summary.moneyIn}
               tone="green"
             />
             <MiniStat
               icon={<ArrowUpRight size={17} />}
-              label="Money out"
+              label={t("Money out")}
               value={summary.moneyOut}
               tone="red"
             />
@@ -115,7 +116,7 @@ export const KhataPage = ({
             <input
               className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-500"
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search entries"
+              placeholder={t("Search entries")}
               type="search"
               value={searchQuery}
             />
@@ -154,7 +155,7 @@ export const KhataPage = ({
                   }}
                   type="button"
                 >
-                  {filter.label}
+                  {t(filter.label)}
                 </button>
               ))}
             </div>
@@ -168,7 +169,7 @@ export const KhataPage = ({
             type="button"
           >
             <Plus size={18} />
-            Add Sale
+            {t("Add Sale")}
           </button>
           <button
             className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white"
@@ -176,11 +177,11 @@ export const KhataPage = ({
             type="button"
           >
             <Minus size={18} />
-            Add Expense
+            {t("Add Expense")}
           </button>
         </div>
 
-        <SectionTitle action="Export" title="Recent Entries" />
+        <SectionTitle action={t("Export")} title={t("Recent Entries")} />
         <div className="rounded-2xl border border-slate-200">
           {filteredRecentEntries.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-slate-500">

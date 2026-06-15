@@ -10,6 +10,7 @@ import {
 import { Row } from "../components/Row";
 import { SectionCard } from "../components/SectionCard";
 import { StatCard } from "../components/StatCard";
+import { useLanguage } from "../lib/i18n";
 import type {
   HomeAlert,
   HomeStats,
@@ -40,33 +41,31 @@ export const HomePage = ({
   onAddSale,
   onUpdateExpense,
   onEditInventory,
-}: HomePageProps) => (
+}: HomePageProps) => {
+  const { t } = useLanguage();
+  return (
   <>
     <header className="bg-green-600 p-5 text-white">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Vendor App</h1>
-
-        <button className="rounded-full bg-white px-3 py-1 text-sm font-medium text-green-600">
-          Hindi
-        </button>
+        <h1 className="text-xl font-bold">{t("Vendor App")}</h1>
       </div>
 
       <div className="mt-4">
-        <h2 className="text-lg font-semibold">Hello, {profile.name.split(" ")[0]}</h2>
-        <p className="text-sm opacity-90">Manage your business easily</p>
+        <h2 className="text-lg font-semibold">{t("Hello")}, {profile.name.split(" ")[0]}</h2>
+        <p className="text-sm opacity-90">{t("Manage your business easily")}</p>
       </div>
     </header>
 
     <div className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
       <div className="grid grid-cols-3 gap-3">
-        <StatCard title="Sales" value={`Rs ${stats.sales.toLocaleString("en-IN")}`} bg="bg-green-50" />
+        <StatCard title={t("Sales")} value={`Rs ${stats.sales.toLocaleString("en-IN")}`} bg="bg-green-50" />
         <StatCard
-          title="Expenses"
+          title={t("Expenses")}
           value={`Rs ${stats.expenses.toLocaleString("en-IN")}`}
           bg="bg-red-50"
         />
         <StatCard
-          title="Profit"
+          title={t("Profit")}
           value={`Rs ${(stats.sales - stats.expenses).toLocaleString("en-IN")}`}
           bg="bg-blue-50"
         />
@@ -74,7 +73,7 @@ export const HomePage = ({
 
       <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 p-4 font-semibold text-white">
         <Mic size={20} />
-        Voice Entry
+        {t("Voice Entry")}
       </button>
 
       <div className="grid grid-cols-2 gap-3 py-4">
@@ -84,7 +83,7 @@ export const HomePage = ({
           type="button"
         >
           <Plus size={18} />
-          Add Sale
+          {t("Add Sale")}
         </button>
 
         <button
@@ -93,13 +92,16 @@ export const HomePage = ({
           type="button"
         >
           <Minus size={18} />
-          Update Expense
+          {t("Update Expense")}
         </button>
       </div>
 
-      <SectionCard icon={<Package className="text-green-600" />} title="Inventory">
-        <p className="mb-2 text-xs text-slate-500">Tap an item to update stock</p>
+      <SectionCard icon={<Package className="text-green-600" />} title={t("Inventory")}>
+        <p className="mb-2 text-xs text-slate-500">{t("Tap an item to update stock")}</p>
         <div className="space-y-2">
+          {inventory.length === 0 && (
+            <p className="py-2 text-sm text-slate-500">{t("No inventory items yet.")}</p>
+          )}
           {inventory.map((item) => (
             <button
               key={item.id}
@@ -114,17 +116,17 @@ export const HomePage = ({
         </div>
       </SectionCard>
 
-      <SectionCard icon={<BookOpen className="text-blue-600" />} title="Digital Khata">
+      <SectionCard icon={<BookOpen className="text-blue-600" />} title={t("Digital Khata")}>
         <div className="space-y-2">
-          <Row label="Money In" value={khataOverview.moneyIn} />
-          <Row label="Money Out" value={khataOverview.moneyOut} />
-          <Row bold label="Cash Flow" value={khataOverview.cashFlow} />
+          <Row label={t("Money In")} value={khataOverview.moneyIn} />
+          <Row label={t("Money Out")} value={khataOverview.moneyOut} />
+          <Row bold label={t("Cash Flow")} value={khataOverview.cashFlow} />
         </div>
       </SectionCard>
 
       <SectionCard
         icon={<CreditCard className="text-purple-600" />}
-        title="Business Health"
+        title={t("Business Health")}
       >
         <div>
           <p className="text-lg font-bold">
@@ -137,14 +139,14 @@ export const HomePage = ({
             />
           </div>
           <p className="mt-3 text-sm">
-            Eligible Loan: <span className="font-bold">{eligibleLoanAmount}</span>
+            {t("Eligible Loan")}: <span className="font-bold">{eligibleLoanAmount}</span>
           </p>
         </div>
       </SectionCard>
 
-      <SectionCard icon={<Bell className="text-yellow-500" />} title="Alerts">
+      <SectionCard icon={<Bell className="text-yellow-500" />} title={t("Alerts")}>
         {alerts.length === 0 ? (
-          <p className="text-sm text-slate-500">No alerts right now.</p>
+          <p className="text-sm text-slate-500">{t("No alerts right now.")}</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {alerts.map((alert) => (
@@ -155,4 +157,5 @@ export const HomePage = ({
       </SectionCard>
     </div>
   </>
-);
+  );
+};

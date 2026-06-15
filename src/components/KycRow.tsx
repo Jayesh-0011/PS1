@@ -1,4 +1,5 @@
 import { CheckCircle, XCircle } from "lucide-react";
+import { useLanguage } from "../lib/i18n";
 
 interface KycRowProps {
   label: string;
@@ -7,6 +8,7 @@ interface KycRowProps {
 }
 
 export const KycRow = ({ label, status, value }: KycRowProps) => {
+  const { t } = useLanguage();
   const isCompleted = status === "Completed";
 
   return (
@@ -31,7 +33,7 @@ export const KycRow = ({ label, status, value }: KycRowProps) => {
             : "bg-amber-100 text-amber-700"
         }`}
       >
-        {status}
+        {t(status)}
       </span>
     </div>
   );

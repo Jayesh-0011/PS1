@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  customers as mockCustomers,
-  loanOffers as mockLoanOffers,
-  recentEntries,
-} from "../data/mockData";
-import {
   buildKhataFeed,
   computeHomeStatsFromBusiness,
   computeKhataOverview,
@@ -22,7 +17,6 @@ import {
   mapVendorProfile,
 } from "../lib/mappers";
 import {
-  demoVendorId,
   fetchVendorData,
   insertBusinessTransaction,
   insertKhataEntry,
@@ -47,55 +41,48 @@ import type {
   VendorProfileView,
 } from "../types";
 
-const mockInventory: InventoryRow[] = [
-  { id: "mock-tomatoes", label: "Tomatoes", quantity: 35, unit: "Kg", value: "35 Kg" },
-  { id: "mock-onions", label: "Onions", quantity: 12, unit: "Kg", value: "12 Kg" },
-  { id: "mock-potatoes", label: "Potatoes", quantity: 50, unit: "Kg", value: "50 Kg" },
-];
-
 const mockProfile: VendorProfileView = mapVendorProfile({
-  id: demoVendorId,
-  name: "Ramesh Kumar",
-  business_type: "Street Food Vendor",
-  phone: "+91 98765 43210",
-  upi_id: "ramesh@oksbi",
-  business_health_index: 78,
-  aadhaar_status: "completed",
-  pan_status: "completed",
-  bank_status: "completed",
+  id: "signed-out",
+  name: "Vendor",
+  business_type: "Vendor",
+  phone: "",
+  upi_id: "Not provided",
+  business_health_index: 0,
+  aadhaar_status: "pending",
+  pan_status: "pending",
+  bank_status: "pending",
   shop_address_status: "pending",
-  aadhaar_masked: "XXXX XXXX 2481",
-  pan_masked: "ABCDE1234F",
-  bank_masked: "SBI ending 0924",
+  aadhaar_masked: null,
+  pan_masked: null,
+  bank_masked: null,
   created_at: new Date().toISOString(),
 });
 
 const formatInventoryValue = (quantity: number, unit: string) =>
   `${quantity.toLocaleString("en-IN")} ${unit}`;
 
-export const useVendorApp = () => {
+export const useVendorApp = (vendorId: string | null) => {
   const [loading, setLoading] = useState(true);
+  const [loadedVendorId, setLoadedVendorId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [profile, setProfile] = useState<VendorProfileView>(mockProfile);
   const [ledgerEntries, setLedgerEntries] =
-    useState<LedgerEntry[]>(recentEntries);
+    useState<LedgerEntry[]>([]);
   const [businessTransactions, setBusinessTransactions] = useState<
     BusinessTransaction[]
   >([]);
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
-  const [inventory, setInventory] = useState<InventoryRow[]>(mockInventory);
-  const [loanOffers, setLoanOffers] = useState<LoanOfferItem[]>(mockLoanOffers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [inventory, setInventory] = useState<InventoryRow[]>([]);
+  const [loanOffers, setLoanOffers] = useState<LoanOfferItem[]>([]);
   const [reminders, setReminders] = useState<ReminderItem[]>([]);
   const [homeStats, setHomeStats] = useState<HomeStats>({
     sales: 0,
     expenses: 0,
   });
   const [homeAlerts, setHomeAlerts] = useState<HomeAlert[]>([]);
-  const [eligibleLoanAmount, setEligibleLoanAmount] = useState(() =>
-    getEligibleLoanAmount(mockLoanOffers, mockProfile.businessHealthIndex),
-  );
-  const [totalReceivable, setTotalReceivable] = useState(6970);
+  const [eligibleLoanAmount, setEligibleLoanAmount] = useState("Rs 0");
+  const [totalReceivable, setTotalReceivable] = useState(0);
 
   const khataFeed = useMemo(
     () => buildKhataFeed(ledgerEntries, businessTransactions),
@@ -108,35 +95,57 @@ export const useVendorApp = () => {
   );
 
   const syncKhataFromServer = useCallback(async () => {
+    if (!vendorId) return;
     const { khataEntries, customers: customerRecords } =
-      await refreshKhataData(demoVendorId);
+      await refreshKhataData(vendorId);
     const mappedEntries = khataEntries.map(mapKhataEntryToLedger);
     const mappedCustomers = mapCustomers(customerRecords, khataEntries);
 
     setLedgerEntries(mappedEntries);
     setCustomers(mappedCustomers);
     setTotalReceivable(computeTotalReceivable(mappedCustomers));
-  }, []);
+  }, [vendorId]);
 
   const syncBusinessFromServer = useCallback(async () => {
-    const records = await refreshBusinessTransactions(demoVendorId);
+    if (!vendorId) return;
+    const records = await refreshBusinessTransactions(vendorId);
     const mapped = records.map(mapBusinessTransaction);
     setBusinessTransactions(mapped);
     setHomeStats(computeHomeStatsFromBusiness(mapped));
-  }, []);
+  }, [vendorId]);
 
   const loadData = useCallback(async () => {
+    if (!vendorId) {
+      setLoadedVendorId(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setLoadedVendorId(null);
     setError(null);
+    setUsingMockData(false);
+    setProfile(mockProfile);
+    setLedgerEntries([]);
+    setBusinessTransactions([]);
+    setCustomers([]);
+    setInventory([]);
+    setLoanOffers([]);
+    setReminders([]);
+    setHomeStats({ sales: 0, expenses: 0 });
+    setHomeAlerts([]);
+    setEligibleLoanAmount("Rs 0");
+    setTotalReceivable(0);
 
     if (!isSupabaseConfigured()) {
-      setUsingMockData(true);
+      setError("Supabase is not configured.");
+      setLoadedVendorId(vendorId);
       setLoading(false);
       return;
     }
 
     try {
-      const data = await fetchVendorData(demoVendorId);
+      const data = await fetchVendorData(vendorId);
       const mappedProfile = mapVendorProfile(data.profile);
       const mappedEntries = data.khataEntries.map(mapKhataEntryToLedger);
       const mappedCustomers = mapCustomers(data.customers, data.khataEntries);
@@ -161,6 +170,7 @@ export const useVendorApp = () => {
       setBusinessTransactions(mappedBusiness);
       setHomeStats(computeHomeStatsFromBusiness(mappedBusiness));
       setUsingMockData(false);
+      setLoadedVendorId(vendorId);
 
       if (data.missingTables.length > 0) {
         setError(
@@ -168,7 +178,8 @@ export const useVendorApp = () => {
         );
       }
     } catch (loadError) {
-      setUsingMockData(true);
+      setUsingMockData(false);
+      setLoadedVendorId(vendorId);
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -177,10 +188,14 @@ export const useVendorApp = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [vendorId]);
 
   useEffect(() => {
-    void loadData();
+    const timeoutId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadData]);
 
   const saveBusinessTransaction = useCallback(
@@ -210,13 +225,13 @@ export const useVendorApp = () => {
             : current.expenses,
       }));
 
-      if (!isSupabaseConfigured()) {
-        return;
+      if (!isSupabaseConfigured() || !vendorId) {
+        throw new Error("You are not logged in or Supabase is unavailable.");
       }
 
       try {
         await insertBusinessTransaction({
-          vendor_id: demoVendorId,
+          vendor_id: vendorId,
           transaction_type: transactionType,
           amount: transaction.amount,
           note: transaction.note,
@@ -234,9 +249,11 @@ export const useVendorApp = () => {
             ? saveError.message
             : "Could not save sale/expense. Run supabase/migrations/20250603_missing_tables.sql if the table is missing.",
         );
+        await loadData();
+        throw saveError;
       }
     },
-    [syncBusinessFromServer],
+    [loadData, syncBusinessFromServer, vendorId],
   );
 
   const saveKhataEntry = useCallback(
@@ -307,13 +324,13 @@ export const useVendorApp = () => {
         return nextCustomers;
       });
 
-      if (!isSupabaseConfigured()) {
-        return;
+      if (!isSupabaseConfigured() || !vendorId) {
+        throw new Error("You are not logged in or Supabase is unavailable.");
       }
 
       try {
         await insertKhataEntry({
-          vendor_id: demoVendorId,
+          vendor_id: vendorId,
           customer_name: transaction.customer,
           customer_upi: null,
           note: transaction.note,
@@ -330,10 +347,11 @@ export const useVendorApp = () => {
             ? saveError.message
             : "Could not save khata entry.",
         );
-        void loadData();
+        await loadData();
+        throw saveError;
       }
     },
-    [loadData, syncKhataFromServer],
+    [loadData, syncKhataFromServer, vendorId],
   );
 
   const saveTransaction = useCallback(
@@ -370,7 +388,7 @@ export const useVendorApp = () => {
         ),
       );
 
-      if (!isSupabaseConfigured()) {
+      if (!isSupabaseConfigured() || !vendorId) {
         return;
       }
 
@@ -386,17 +404,17 @@ export const useVendorApp = () => {
         void loadData();
       }
     },
-    [inventory, loadData],
+    [inventory, loadData, vendorId],
   );
 
   const submitProfileAction = useCallback(
     async (actionType: ProfileActionType) => {
-      if (!isSupabaseConfigured()) {
+      if (!isSupabaseConfigured() || !vendorId) {
         return;
       }
 
       try {
-        await insertProfileAction(demoVendorId, actionType, {
+        await insertProfileAction(vendorId, actionType, {
           business_health_index: profile.businessHealthIndex,
           submitted_at: new Date().toISOString(),
         });
@@ -409,11 +427,11 @@ export const useVendorApp = () => {
         );
       }
     },
-    [profile.businessHealthIndex],
+    [profile.businessHealthIndex, vendorId],
   );
 
   return {
-    loading,
+    loading: loading || Boolean(vendorId && loadedVendorId !== vendorId),
     error,
     usingMockData,
     profile,
