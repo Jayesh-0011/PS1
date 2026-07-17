@@ -29,6 +29,7 @@ interface HomePageProps {
   onAddSale: () => void;
   onUpdateExpense: () => void;
   onEditInventory: (item: InventoryRow) => void;
+  onVoiceEntry: () => void;
 }
 
 export const HomePage = ({
@@ -41,6 +42,7 @@ export const HomePage = ({
   onAddSale,
   onUpdateExpense,
   onEditInventory,
+  onVoiceEntry,
 }: HomePageProps) => {
   const { t } = useLanguage();
   return (
@@ -71,7 +73,7 @@ export const HomePage = ({
         />
       </div>
 
-      <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 p-4 font-semibold text-white">
+      <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 p-4 font-semibold text-white" onClick={onVoiceEntry} type="button">
         <Mic size={20} />
         {t("Voice Entry")}
       </button>

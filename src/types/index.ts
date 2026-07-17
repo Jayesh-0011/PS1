@@ -29,6 +29,17 @@ export interface TransactionInput {
   note: string;
   amount: number;
   type: "in" | "out";
+  voicePayload?: VoiceInterpretation;
+}
+
+export interface VoiceInterpretation {
+  transcript: string;
+  translation: string;
+  intent: "sale" | "expense" | "unknown";
+  amount: number | null;
+  item: string;
+  note: string;
+  confidence: number;
 }
 
 export interface Customer {

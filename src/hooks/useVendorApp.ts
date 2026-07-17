@@ -236,6 +236,7 @@ export const useVendorApp = (vendorId: string | null) => {
           amount: transaction.amount,
           note: transaction.note,
           transaction_date: transactionDate,
+          voice_payload: transaction.voicePayload ?? null,
         });
 
         await syncBusinessFromServer();

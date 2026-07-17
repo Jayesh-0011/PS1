@@ -9,6 +9,7 @@ import {
 import { InventoryModal } from "./components/InventoryModal";
 import { NavItem } from "./components/NavItem";
 import { TransactionModal } from "./components/TransactionModal";
+import { VoiceEntryModal } from "./components/VoiceEntryModal";
 import { useVendorApp } from "./hooks/useVendorApp";
 import { findOrCreateVendorByPhone } from "./lib/supabaseRest";
 import { useLanguage } from "./lib/i18n";
@@ -31,6 +32,7 @@ const App = () => {
     useState<TransactionIntent | null>(null);
   const [editingInventoryItem, setEditingInventoryItem] =
     useState<InventoryRow | null>(null);
+  const [voiceEntryOpen, setVoiceEntryOpen] = useState(false);
   const {
     loading,
     error,
@@ -110,6 +112,7 @@ const App = () => {
             onAddSale={() => setTransactionIntent("sale")}
             onEditInventory={setEditingInventoryItem}
             onUpdateExpense={() => setTransactionIntent("expense")}
+            onVoiceEntry={() => setVoiceEntryOpen(true)}
             profile={profile}
             stats={homeStats}
           />
@@ -190,6 +193,17 @@ const App = () => {
             onSave={(itemId, quantity) => {
               void updateInventory(itemId, quantity);
             }}
+          />
+        )}
+
+        {voiceEntryOpen && (
+          <VoiceEntryModal
+            onClose={() => setVoiceEntryOpen(false)}
+            onSaved={() => {
+              setVoiceEntryOpen(false);
+              setActivePage("khata");
+            }}
+            onSave={handleSaveTransaction}
           />
         )}
       </div>

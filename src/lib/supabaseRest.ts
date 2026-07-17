@@ -57,6 +57,7 @@ export interface BusinessTransactionRecord {
   note: string;
   transaction_date: string;
   created_at: string;
+  voice_payload?: unknown | null;
 }
 
 export interface KhataEntry {
@@ -375,7 +376,18 @@ export const fetchVendorData = async (
 
 export const insertBusinessTransaction = (
   payload: Omit<BusinessTransactionRecord, "id" | "created_at">,
-) => insertRow<BusinessTransactionRecord>("business_transactions", payload);
+) => {
+  console.info("[supabase] inserting business transaction", payload);
+  return insertRow<BusinessTransactionRecord>("business_transactions", payload)
+    .then((record) => {
+      console.info("[supabase] business transaction inserted", record);
+      return record;
+    })
+    .catch((error) => {
+      console.error("[supabase] business transaction insert failed", error);
+      throw error;
+    });
+};
 
 export const updateInventoryItem = (id: string, quantity: number) =>
   updateRow<InventoryItem>("inventory_items", id, {

@@ -48,6 +48,7 @@ create table if not exists public.business_transactions (
   transaction_type text not null check (transaction_type in ('sale', 'expense')),
   amount numeric(12, 2) not null check (amount > 0),
   note text not null default '',
+  voice_payload jsonb,
   transaction_date date not null default current_date,
   created_at timestamptz not null default now()
 );
